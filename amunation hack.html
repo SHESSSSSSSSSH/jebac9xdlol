@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Letters Game</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: radial-gradient(circle, #1e1e2f, #121212);
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 600px;
+            height: 800px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .block {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        #scoringZone {
+            position: absolute;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+        }
+
+        #instructions {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        #score {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">Wyklikaj wszystkie elementy w odpowiednim miejscu</div>
+    <div id="score">Punkty: 0</div>
+    <div id="gameContainer">
+        <div id="scoringZone"></div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const scoringZone = document.getElementById('scoringZone');
+        const scoreDisplay = document.getElementById('score');
+
+        let fallingBlocks = [];
+        const letters = ['A', 'S', 'D', 'F', 'G'];
+        const fallingSpeed = 4; // Default speed equivalent to previous speed setting 4
+        let spawnInterval;
+        let score = 0;
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function createBlock(content, x, y) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.textContent = content;
+            block.style.left = `${x}px`;
+            block.style.top = `${y}px`;
+            block.dataset.content = content;
+            gameContainer.appendChild(block);
+            return block;
+        }
+
+        function spawnBlock() {
+            const content = letters[randomInt(0, letters.length - 1)];
+            const x = randomInt(20, gameContainer.offsetWidth - 70);
+            const block = createBlock(content, x, -50);
+            fallingBlocks.push(block);
+        }
+
+        function updateBlocks() {
+            fallingBlocks.forEach((block, index) => {
+                const currentY = parseInt(block.style.top, 10);
+                block.style.top = `${currentY + fallingSpeed}px`;
+
+                if (currentY > gameContainer.offsetHeight) {
+                    resetGame();
+                }
+            });
+        }
+
+        function isBlockInScoringZone(block) {
+            const scoringZoneRect = scoringZone.getBoundingClientRect();
+            const blockRect = block.getBoundingClientRect();
+
+            return (
+                blockRect.right >= scoringZoneRect.left &&
+                blockRect.left <= scoringZoneRect.right &&
+                blockRect.bottom >= scoringZoneRect.top &&
+                blockRect.top <= scoringZoneRect.bottom
+            );
+        }
+
+        function handleKeyPress(event) {
+            const pressedKey = event.key.toUpperCase();
+
+            for (let i = 0; i < fallingBlocks.length; i++) {
+                const block = fallingBlocks[i];
+
+                if (block.dataset.content === pressedKey) {
+                    if (isBlockInScoringZone(block)) {
+                        score++;
+                        scoreDisplay.textContent = `Punkty: ${score}`;
+                    } else {
+                        resetGame();
+                    }
+                    gameContainer.removeChild(block);
+                    fallingBlocks.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        function resetGame() {
+            alert(`Gra zakończona! Twój wynik: ${score}`);
+            score = 0;
+            scoreDisplay.textContent = `Punkty: ${score}`;
+            fallingBlocks.forEach(block => gameContainer.removeChild(block));
+            fallingBlocks = [];
+        }
+
+        function startGame() {
+            spawnBlock();
+            spawnInterval = setInterval(spawnBlock, randomInt(500, 800)); // Higher density of letters
+            function gameLoop() {
+                updateBlocks();
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop();
+        }
+
+        window.addEventListener('keydown', handleKeyPress);
+        startGame();
+    </script>
+</body>
+</html>
